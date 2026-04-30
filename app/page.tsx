@@ -539,11 +539,9 @@ export default function Home() {
           </motion.div>
           <section className="flex flex-col items-start justify-center text-left gap-16" style={{ minHeight: "10vh", padding: "0 4rem" }} />
           <motion.h2 className="font-black leading-[1.06] tracking-tight" style={{ fontSize: "clamp(2rem, 4.5vw, 4.5rem)" }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.3 }}>
-            QA Specialist at Checkpoint
+            I build things, break things,
             <br />
-            Softwares, looking for
-            <br />
-            my next opportunity.
+            and make them beautiful.
           </motion.h2>
         </section>
 
