@@ -4,6 +4,19 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 
+// ─── Mobile detection ─────────────────────────────────────────────────────────
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+  return isMobile;
+}
+
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
 const EmailIcon = () => (
@@ -72,12 +85,18 @@ const RefillMockup = () => (
   />
 );
 
-const FramesMockup = () => (
-  <div style={{ position: "relative", width: "520px", height: "280px", overflow: "visible" }}>
-    <span style={{ fontSize: "280px", fontWeight: 900, color: "rgba(255,255,255,0.85)", lineHeight: 1, position: "absolute", bottom: 0, left: "60px", userSelect: "none" }}>£</span>
-    <span style={{ fontSize: "280px", fontWeight: 900, color: "rgba(255,255,255,0.85)", lineHeight: 1, position: "absolute", bottom: 0, right: "60px", userSelect: "none" }}>$</span>
-  </div>
-);
+const FramesMockup = () => {
+  const isMobile = useIsMobile();
+  const size = isMobile ? "120px" : "280px";
+  const w = isMobile ? "260px" : "520px";
+  const h = isMobile ? "130px" : "280px";
+  return (
+    <div style={{ position: "relative", width: w, height: h, overflow: "visible" }}>
+      <span style={{ fontSize: size, fontWeight: 900, color: "rgba(255,255,255,0.85)", lineHeight: 1, position: "absolute", bottom: 0, left: isMobile ? "20px" : "60px", userSelect: "none" }}>£</span>
+      <span style={{ fontSize: size, fontWeight: 900, color: "rgba(255,255,255,0.85)", lineHeight: 1, position: "absolute", bottom: 0, right: isMobile ? "20px" : "60px", userSelect: "none" }}>$</span>
+    </div>
+  );
+};
 
 // ─── Phone frame wrapper ─────────────────────────────────────────────────────
 
@@ -117,14 +136,15 @@ const ParallaxMockups = ({
   mockups: [MockupImage, MockupImage, MockupImage];
   bg: string;
 }) => {
+  const isMobile = useIsMobile();
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
 
-  // Outside phones rise against scroll; centre phone sinks with scroll
   const yOuter = useTransform(scrollYProgress, [0, 1], [120, -120]);
   const yCenter = useTransform(scrollYProgress, [0, 1], [-80, 80]);
 
   const [left, center, right] = mockups;
+  const phoneWidth = isMobile ? "95px" : "190px";
 
   return (
     <div
@@ -133,27 +153,27 @@ const ParallaxMockups = ({
         backgroundColor: bg,
         paddingTop: "6rem",
         paddingBottom: "6rem",
-        paddingLeft: "160px",
-        paddingRight: "4rem",
+        paddingLeft: isMobile ? "24px" : "160px",
+        paddingRight: isMobile ? "24px" : "4rem",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        gap: "12rem",
+        gap: isMobile ? "1.5rem" : "12rem",
         overflow: "hidden",
       }}
     >
-      <motion.div style={{ y: yOuter }}>
-        <PhoneFrame>
+      <motion.div style={{ y: isMobile ? 0 : yOuter }}>
+        <PhoneFrame width={phoneWidth}>
           <Image src={left.src} alt="" width={left.width} height={left.height} style={{ width: "100%", height: "auto", display: "block" }} />
         </PhoneFrame>
       </motion.div>
-      <motion.div style={{ y: yCenter }}>
-        <PhoneFrame>
+      <motion.div style={{ y: isMobile ? 0 : yCenter }}>
+        <PhoneFrame width={phoneWidth}>
           <Image src={center.src} alt="" width={center.width} height={center.height} style={{ width: "100%", height: "auto", display: "block" }} />
         </PhoneFrame>
       </motion.div>
-      <motion.div style={{ y: yOuter }}>
-        <PhoneFrame>
+      <motion.div style={{ y: isMobile ? 0 : yOuter }}>
+        <PhoneFrame width={phoneWidth}>
           <Image src={right.src} alt="" width={right.width} height={right.height} style={{ width: "100%", height: "auto", display: "block" }} />
         </PhoneFrame>
       </motion.div>
@@ -280,193 +300,197 @@ const PROJECTS: ProjectData[] = [
   // ← add future projects here
 ];
 
+// ─── Text section (shared layout for challenge / additional / final) ──────────
+
+function TextSection({ sec, isMobile }: { sec: ProjectChallenge; isMobile: boolean }) {
+  const bodies = Array.isArray(sec.body) ? sec.body : [sec.body];
+  return (
+    <div style={{
+      backgroundColor: "#f6f6f6",
+      paddingTop: "4rem",
+      paddingBottom: "4rem",
+      paddingLeft: isMobile ? "24px" : "160px",
+      paddingRight: isMobile ? "24px" : "17rem",
+      display: "flex",
+      flexDirection: isMobile ? "column" : "row",
+      gap: isMobile ? "1rem" : "4rem",
+      alignItems: "flex-start",
+    }}>
+      <div style={{ flexShrink: 0, width: isMobile ? "auto" : "260px" }}>
+        <p style={{ fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "#888", marginBottom: "0.5rem" }}>{sec.label}</p>
+        <h3 className="font-bold" style={{ fontSize: "clamp(1.3rem, 2.2vw, 2rem)", lineHeight: 1.1, color: "#000" }}>{sec.title}</h3>
+      </div>
+      <div style={{ flex: 1, paddingTop: isMobile ? 0 : "0.15rem" }}>
+        {bodies.map((para, j) => (
+          <p key={j} style={{ fontSize: isMobile ? "1rem" : "1.3rem", lineHeight: 1.75, color: "#333", marginBottom: j < bodies.length - 1 ? "1.5rem" : 0 }}>{para}</p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Reusable project section ─────────────────────────────────────────────────
 
-const ProjectSection = ({ project }: { project: ProjectData }) => (
-  <section id={project.id}>
-    {/* Header */}
-    <div style={{ paddingTop: "5rem", paddingBottom: "3rem", paddingLeft: "160px", paddingRight: "4rem" }}>
-      <p style={{ fontSize: "1.1rem", marginBottom: "0.4rem", color: "#555" }}>{project.year}</p>
-      <h2 className="font-semibold tracking-tight" style={{ fontSize: "clamp(2rem, 4vw, 3.5rem)", lineHeight: 1.05 }}>{project.title}</h2>
-      <p className="font-semibold tracking-tight" style={{ fontSize: "clamp(2rem, 4vw, 3.5rem)", color: project.subtitleColor, lineHeight: 1.1 }}>{project.subtitle}</p>
-    </div>
+function ProjectSection({ project }: { project: ProjectData }) {
+  const isMobile = useIsMobile();
+  const px = isMobile ? "24px" : "160px";
+  const pr = isMobile ? "24px" : "4rem";
 
-    {/* Mockup */}
-    <div style={{ backgroundColor: project.mockupBg, paddingTop: "5rem", paddingBottom: "5rem", paddingLeft: "160px", paddingRight: "4em", display: "flex", justifyContent: "center", alignItems: "center"}}>
-      {project.mockup}
-    </div>
-
-    {/* Description */}
-    <div style={{ backgroundColor: "#f6f6f6", paddingTop: "4rem", paddingBottom: "4rem", paddingLeft: "160px", paddingRight: "17rem", display: "flex", gap: "6rem", alignItems: "flex-start" }}>
-      <div style={{ flex: 1 }}>
-        {project.description.map((para, i) => (
-          <p key={i} style={{ lineHeight: 1.7, fontSize: "1.3rem", color: "#222", paddingRight: "10rem", marginBottom: i < project.description.length - 1 ? "1.5rem" : 0 }}>{para}</p>
-        ))}
+  return (
+    <section id={project.id}>
+      {/* Header */}
+      <div style={{ paddingTop: "4rem", paddingBottom: "2rem", paddingLeft: px, paddingRight: pr }}>
+        <p style={{ fontSize: "1rem", marginBottom: "0.4rem", color: "#555" }}>{project.year}</p>
+        <h2 className="font-semibold tracking-tight" style={{ fontSize: "clamp(2rem, 4vw, 3.5rem)", lineHeight: 1.05 }}>{project.title}</h2>
+        <p className="font-semibold tracking-tight" style={{ fontSize: "clamp(2rem, 4vw, 3.5rem)", color: project.subtitleColor, lineHeight: 1.1 }}>{project.subtitle}</p>
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: "1.8rem", flexShrink: 0 }}>
-        {project.meta.map(({ label, items }) => (
-          <div key={label}>
-            <p style={{ fontSize: "0.6rem", fontWeight: 900, letterSpacing: "0.15em", textTransform: "uppercase", color: "#444", marginBottom: "0.4rem" }}>{label}</p>
-            {items.map((item, i) => (
-              typeof item === "string"
-                ? <p key={i} style={{ fontSize: "0.9rem", color: "#222" }}>{item}</p>
-                : <a key={i} href={item.href} download={item.download} style={{ fontSize: "0.9rem", color: "#222", textDecoration: "underline", cursor: "pointer", display: "block" }}>{item.text}</a>
-            ))}
-          </div>
-        ))}
+
+      {/* Mockup */}
+      <div style={{ backgroundColor: project.mockupBg, paddingTop: "4rem", paddingBottom: "4rem", paddingLeft: px, paddingRight: pr, display: "flex", justifyContent: "center", alignItems: "center", overflow: "hidden" }}>
+        {project.mockup}
       </div>
-    </div>
 
-    {/* Parallax mockup gallery */}
-    {project.parallaxMockups && (
-      <ParallaxMockups mockups={project.parallaxMockups} bg="#f6f6f6" />
-    )}
-
-      <section
-        className="flex flex-col items-start justify-center text-left gap-16"
-        style={{ backgroundColor: "#f6f6f6", minHeight: "7vh", padding: "0 4rem" }}
-      ></section>
-
-    {/* Challenge section */}
-    {project.challenge && (
-      <div style={{ backgroundColor: "#f6f6f6", paddingTop: "5rem", paddingBottom: "5rem", paddingLeft: "160px", paddingRight: "17rem", display: "flex", gap: "4rem", alignItems: "flex-start" }}>
-        <div style={{ flexShrink: 0, width: "260px" }}>
-          <p style={{ fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "#888", marginBottom: "0.75rem" }}>
-            {project.challenge.label}
-          </p>
-          <h3 className="font-bold" style={{ fontSize: "clamp(1.4rem, 2.2vw, 2rem)", paddingRight: "10rem", lineHeight: 1.1, color: "#000" }}>
-            {project.challenge.title}
-          </h3>
-        </div>
-        <div style={{ flex: 1, paddingTop: "0.15rem" }}>
-          {(Array.isArray(project.challenge.body) ? project.challenge.body : [project.challenge.body]).map((para, j, arr) => (
-            <p key={j} style={{ fontSize: "1.3rem", lineHeight: 1.75, color: "#333", marginBottom: j < arr.length - 1 ? "1.5rem" : 0 }}>{para}</p>
+      {/* Description */}
+      <div style={{
+        backgroundColor: "#f6f6f6",
+        paddingTop: "3rem",
+        paddingBottom: "3rem",
+        paddingLeft: px,
+        paddingRight: isMobile ? "24px" : "17rem",
+        display: "flex",
+        flexDirection: isMobile ? "column" : "row",
+        gap: isMobile ? "2rem" : "6rem",
+        alignItems: "flex-start",
+      }}>
+        <div style={{ flex: 1 }}>
+          {project.description.map((para, i) => (
+            <p key={i} style={{ lineHeight: 1.7, fontSize: isMobile ? "1rem" : "1.3rem", color: "#222", paddingRight: isMobile ? 0 : "10rem", marginBottom: i < project.description.length - 1 ? "1.5rem" : 0 }}>{para}</p>
           ))}
         </div>
-      </div>
-    )}
-
-    {/* Ads / mockup grid */}
-    {project.adsGrid && project.adsGrid.length > 0 && (
-      <div style={{ backgroundColor: "#f6f6f6", paddingTop: "2em", paddingBottom: "6rem", paddingLeft: "260px", paddingRight: "12rem" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr 1fr", gap: "12px", alignItems: "start" }}>
-          {project.adsGrid.map(({ src, width, height, gridColumn, gridRow, marginTop, alignSelf }, i) => (
-            <div key={i} style={{ gridColumn, gridRow, borderRadius: "14px", overflow: "hidden", marginTop: marginTop ?? "0px", alignSelf: alignSelf ?? "start" }}>
-              <Image src={src} alt="" width={width} height={height} style={{ width: "100%", height: "auto", display: "block" }} />
+        <div style={{ display: "flex", flexDirection: isMobile ? "row" : "column", flexWrap: isMobile ? "wrap" : "nowrap", gap: isMobile ? "1.5rem" : "1.8rem", flexShrink: 0 }}>
+          {project.meta.map(({ label, items }) => (
+            <div key={label}>
+              <p style={{ fontSize: "0.6rem", fontWeight: 900, letterSpacing: "0.15em", textTransform: "uppercase", color: "#444", marginBottom: "0.4rem" }}>{label}</p>
+              {items.map((item, i) => (
+                typeof item === "string"
+                  ? <p key={i} style={{ fontSize: "0.9rem", color: "#222" }}>{item}</p>
+                  : <a key={i} href={item.href} download={item.download} style={{ fontSize: "0.9rem", color: "#222", textDecoration: "underline", cursor: "pointer", display: "block" }}>{item.text}</a>
+              ))}
             </div>
           ))}
         </div>
       </div>
-    )}
 
-    {/* Screenshot grid */}
-    {project.screenshotGrid && project.screenshotGrid.length > 0 && (
-  <div style={{
-    backgroundColor: project.screenshotGridBg ?? "#FFCCC2",
-    overflow: "hidden",
-  }}>
-    {[0, 1, 2, 3].map((rowIndex) => {
-      const imgs = project.screenshotGrid!;
-      const cols = 5;
-      const rowImgs = Array.from({ length: cols }, (_, i) => {
-        const offset = rowIndex * cols + i;
-        return imgs[offset % imgs.length];
-      });
+      {/* Parallax mockup gallery */}
+      {project.parallaxMockups && (
+        <ParallaxMockups mockups={project.parallaxMockups} bg="#f6f6f6" />
+      )}
 
-      const isEdgeRow = rowIndex === 0 || rowIndex === 3;
+      <section style={{ backgroundColor: "#f6f6f6", minHeight: "4vh" }} />
 
-      return (
-        <div
-          key={rowIndex}
-          style={{
-            display: "flex",
-            gap: "30px",
-            marginLeft: "-5px",
-            marginRight: "-5px",
-            marginTop: rowIndex === 0 ? "-9.5%" : "30px",
-            marginBottom: rowIndex === 3 ? "-9.5%" : undefined,
-          }}
-        >
-          {rowImgs.map((img, i) => (
-            <div
-              key={i}
-              style={{
-                flex: "0 0 calc(20% - 10px)",
-                aspectRatio: "16/10",
-                borderRadius: "10px",
-                overflow: "hidden",
-                flexShrink: 0,
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={img.src}
-                alt=""
-                style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
-              />
+      {/* Challenge section */}
+      {project.challenge && <TextSection sec={project.challenge} isMobile={isMobile} />}
+
+      {/* Ads / mockup grid */}
+      {project.adsGrid && project.adsGrid.length > 0 && (
+        <div style={{ backgroundColor: "#f6f6f6", paddingTop: "2rem", paddingBottom: "4rem", paddingLeft: isMobile ? "24px" : "260px", paddingRight: isMobile ? "24px" : "12rem" }}>
+          {isMobile ? (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+              {project.adsGrid.map(({ src, width, height }, i) => (
+                <div key={i} style={{ borderRadius: "10px", overflow: "hidden" }}>
+                  <Image src={src} alt="" width={width} height={height} style={{ width: "100%", height: "auto", display: "block" }} />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      );
-    })}
-  </div>
-)}
-
-    {/* Additional text sections */}
-    {project.additionalSections?.map((sec, i) => (
-      <div key={i} style={{ backgroundColor: "#f6f6f6", paddingTop: "5rem", paddingBottom: "5rem", paddingLeft: "160px", paddingRight: "17rem", display: "flex", gap: "4rem", alignItems: "flex-start" }}>
-        <div style={{ flexShrink: 0, width: "260px" }}>
-          <p style={{ fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "#888", marginBottom: "0.75rem" }}>
-            {sec.label}
-          </p>
-          <h3 className="font-bold" style={{ fontSize: "clamp(1.4rem, 2.2vw, 2rem)", lineHeight: 1.1, color: "#000" }}>
-            {sec.title}
-          </h3>
-        </div>
-        <div style={{ flex: 1, paddingTop: "0.15rem" }}>
-          {(Array.isArray(sec.body) ? sec.body : [sec.body]).map((para, j) => (
-            <p key={j} style={{ fontSize: "1.3rem", lineHeight: 1.75, color: "#333", marginBottom: j < (Array.isArray(sec.body) ? sec.body.length : 1) - 1 ? "1.5rem" : 0 }}>{para}</p>
-          ))}
-        </div>
-      </div>
-    ))}
-
-    {/* Ads / mockup grid (after additional sections) */}
-    {project.adsGridAfter && project.adsGridAfter.length > 0 && (
-      <div style={{ backgroundColor: "#f6f6f6", paddingTop: "2em", paddingBottom: "6rem", paddingLeft: "260px", paddingRight: "12rem" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr 1fr", gap: "12px", alignItems: "start" }}>
-          {project.adsGridAfter.map(({ src, width, height, gridColumn, gridRow, marginTop, alignSelf }, i) => (
-            <div key={i} style={{ gridColumn, gridRow, borderRadius: "14px", overflow: "hidden", marginTop: marginTop ?? "0px", alignSelf: alignSelf ?? "start" }}>
-              <Image src={src} alt="" width={width} height={height} style={{ width: "100%", height: "auto", display: "block" }} />
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr 1fr", gap: "12px", alignItems: "start" }}>
+              {project.adsGrid.map(({ src, width, height, gridColumn, gridRow, marginTop, alignSelf }, i) => (
+                <div key={i} style={{ gridColumn, gridRow, borderRadius: "14px", overflow: "hidden", marginTop: marginTop ?? "0px", alignSelf: alignSelf ?? "start" }}>
+                  <Image src={src} alt="" width={width} height={height} style={{ width: "100%", height: "auto", display: "block" }} />
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
-      </div>
-    )}
+      )}
 
-    {/* Final text sections (after adsGridAfter) */}
-    {project.finalSections?.map((sec, i) => (
-      <div key={i} style={{ backgroundColor: "#f6f6f6", paddingTop: "5rem", paddingBottom: "5rem", paddingLeft: "160px", paddingRight: "17rem", display: "flex", gap: "4rem", alignItems: "flex-start" }}>
-        <div style={{ flexShrink: 0, width: "260px" }}>
-          <p style={{ fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "#888", marginBottom: "0.75rem" }}>{sec.label}</p>
-          <h3 className="font-bold" style={{ fontSize: "clamp(1.4rem, 2.2vw, 2rem)", lineHeight: 1.1, color: "#000" }}>{sec.title}</h3>
+      {/* Screenshot grid */}
+      {project.screenshotGrid && project.screenshotGrid.length > 0 && (
+        <div style={{ backgroundColor: project.screenshotGridBg ?? "#FFCCC2", overflow: "hidden" }}>
+          {isMobile ? (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", padding: "24px" }}>
+              {project.screenshotGrid.slice(0, 4).map((img, i) => (
+                <div key={i} style={{ borderRadius: "10px", overflow: "hidden", aspectRatio: "16/10" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={img.src} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            [0, 1, 2, 3].map((rowIndex) => {
+              const imgs = project.screenshotGrid!;
+              const cols = 5;
+              const rowImgs = Array.from({ length: cols }, (_, i) => {
+                const offset = rowIndex * cols + i;
+                return imgs[offset % imgs.length];
+              });
+              return (
+                <div key={rowIndex} style={{ display: "flex", gap: "30px", marginLeft: "-5px", marginRight: "-5px", marginTop: rowIndex === 0 ? "-9.5%" : "30px", marginBottom: rowIndex === 3 ? "-9.5%" : undefined }}>
+                  {rowImgs.map((img, i) => (
+                    <div key={i} style={{ flex: "0 0 calc(20% - 10px)", aspectRatio: "16/10", borderRadius: "10px", overflow: "hidden", flexShrink: 0 }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={img.src} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
+                    </div>
+                  ))}
+                </div>
+              );
+            })
+          )}
         </div>
-        <div style={{ flex: 1, paddingTop: "0.15rem" }}>
-          {(Array.isArray(sec.body) ? sec.body : [sec.body]).map((para, j, arr) => (
-            <p key={j} style={{ fontSize: "1.3rem", lineHeight: 1.75, color: "#333", marginBottom: j < arr.length - 1 ? "1.5rem" : 0 }}>{para}</p>
-          ))}
-        </div>
-      </div>
-    ))}
-  </section>
+      )}
 
-);
+      {/* Additional text sections */}
+      {project.additionalSections?.map((sec, i) => (
+        <TextSection key={i} sec={sec} isMobile={isMobile} />
+      ))}
+
+      {/* Ads / mockup grid (after additional sections) */}
+      {project.adsGridAfter && project.adsGridAfter.length > 0 && (
+        <div style={{ backgroundColor: "#f6f6f6", paddingTop: "2rem", paddingBottom: "4rem", paddingLeft: isMobile ? "24px" : "260px", paddingRight: isMobile ? "24px" : "12rem" }}>
+          {isMobile ? (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+              {project.adsGridAfter.map(({ src, width, height }, i) => (
+                <div key={i} style={{ borderRadius: "10px", overflow: "hidden" }}>
+                  <Image src={src} alt="" width={width} height={height} style={{ width: "100%", height: "auto", display: "block" }} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr 1fr", gap: "12px", alignItems: "start" }}>
+              {project.adsGridAfter.map(({ src, width, height, gridColumn, gridRow, marginTop, alignSelf }, i) => (
+                <div key={i} style={{ gridColumn, gridRow, borderRadius: "14px", overflow: "hidden", marginTop: marginTop ?? "0px", alignSelf: alignSelf ?? "start" }}>
+                  <Image src={src} alt="" width={width} height={height} style={{ width: "100%", height: "auto", display: "block" }} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Final text sections */}
+      {project.finalSections?.map((sec, i) => (
+        <TextSection key={i} sec={sec} isMobile={isMobile} />
+      ))}
+    </section>
+  );
+}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Home() {
   const [isLight, setIsLight] = useState(false);
   const [activeProject, setActiveProject] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const onScroll = () => {
@@ -496,37 +520,41 @@ export default function Home() {
 
   const iconColor = isLight ? "#000" : "#fff";
   const colorTransition = "color 0.5s ease";
+  const px = isMobile ? "24px" : "160px";
 
   return (
     <div style={{ backgroundColor: isLight ? "#fff" : "#000", color: isLight ? "#000" : "#fff", transition: "background-color 0.5s ease, color 0.5s ease" }}>
 
       {/* Fixed Side Navigation */}
-      <nav className="fixed flex flex-col gap-7 z-20" style={{ left: "2rem", top: "2rem" }}>
+      <nav className="fixed flex flex-col gap-7 z-20" style={{ left: "1.25rem", top: "1.5rem" }}>
         <motion.a href="mailto:tamireilon@gmail.com" aria-label="Email" style={{ color: iconColor, transition: colorTransition }} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.2 }}>
           <EmailIcon />
         </motion.a>
         <motion.a href="https://linkedin.com/in/tamireilon" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" style={{ color: iconColor, transition: colorTransition }} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.3 }}>
           <LinkedInIcon />
         </motion.a>
-        {/* Project nav labels */}
-        <AnimatePresence>
-          {isLight && (
-            <motion.div key="projects" className="flex flex-col" style={{ gap: "2rem", marginTop: "1rem" }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}>
-              {PROJECTS.map(({ id, title }) => (
-                <a key={id} href={`#${id}`} onClick={(e) => { e.preventDefault(); const el = document.getElementById(id); if (!el) return; const start = window.scrollY; const end = el.getBoundingClientRect().top + start; const duration = 1400; const startTime = performance.now(); const ease = (t: number) => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2; const step = (now: number) => { const elapsed = now - startTime; const progress = Math.min(elapsed / duration, 1); window.scrollTo(0, start + (end - start) * ease(progress)); if (progress < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); }} style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", fontSize: "0.65rem", fontWeight: 500, letterSpacing: "0.15em", textTransform: "uppercase", color: activeProject === id ? "#000" : "#bbb", transition: "color 0.3s ease", textDecoration: "none" }}>
-                  {title}
-                </a>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
+
+        {/* Project nav labels — desktop only */}
+        {!isMobile && (
+          <AnimatePresence>
+            {isLight && (
+              <motion.div key="projects" className="flex flex-col" style={{ gap: "2rem", marginTop: "1rem" }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}>
+                {PROJECTS.map(({ id, title }) => (
+                  <a key={id} href={`#${id}`} onClick={(e) => { e.preventDefault(); const el = document.getElementById(id); if (!el) return; const start = window.scrollY; const end = el.getBoundingClientRect().top + start; const duration = 1400; const startTime = performance.now(); const ease = (t: number) => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2; const step = (now: number) => { const elapsed = now - startTime; const progress = Math.min(elapsed / duration, 1); window.scrollTo(0, start + (end - start) * ease(progress)); if (progress < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); }} style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", fontSize: "0.65rem", fontWeight: 500, letterSpacing: "0.15em", textTransform: "uppercase", color: activeProject === id ? "#000" : "#bbb", transition: "color 0.3s ease", textDecoration: "none" }}>
+                    {title}
+                  </a>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        )}
       </nav>
 
-      {/* Scrollable content — no marginLeft so section backgrounds bleed edge-to-edge */}
+      {/* Scrollable content */}
       <main>
 
         {/* Hero */}
-        <section className="flex flex-col items-start justify-center text-left" style={{ minHeight: "100vh", paddingLeft: "160px", paddingRight: "4rem" }}>
+        <section className="flex flex-col items-start justify-center text-left" style={{ minHeight: "100vh", paddingLeft: px, paddingRight: isMobile ? "24px" : "4rem" }}>
           <motion.p className="font-bold mb-8" style={{ fontSize: "1rem" }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             Tamir Eilon
           </motion.p>
@@ -537,7 +565,7 @@ export default function Home() {
               <DesignerHighlight />
             </h1>
           </motion.div>
-          <section className="flex flex-col items-start justify-center text-left gap-16" style={{ minHeight: "10vh", padding: "0 4rem" }} />
+          <div style={{ minHeight: "10vh" }} />
           <motion.h2 className="font-black leading-[1.06] tracking-tight" style={{ fontSize: "clamp(2rem, 4.5vw, 4.5rem)" }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.3 }}>
             I build things, break things,
             <br />
@@ -545,10 +573,7 @@ export default function Home() {
           </motion.h2>
         </section>
 
-        <section
-          className="flex flex-col items-start justify-center text-left gap-16"
-          style={{ minHeight: "60vh", padding: "0 4rem" }}
-        ></section>
+        <div style={{ minHeight: "40vh" }} />
 
         {/* Project sections — rendered from data */}
         {PROJECTS.map((project) => (
@@ -556,7 +581,7 @@ export default function Home() {
         ))}
 
         {/* Footer */}
-        <footer style={{ backgroundColor: "#ffff", minHeight: "40vh", display: "flex", flexDirection: "column", justifyContent: "center", paddingLeft: "160px", paddingRight: "4rem", paddingTop: "6rem", paddingBottom: "6rem" }}>
+        <footer style={{ backgroundColor: "#f6f6f6", minHeight: "40vh", display: "flex", flexDirection: "column", justifyContent: "center", paddingLeft: px, paddingRight: isMobile ? "24px" : "4rem", paddingTop: "6rem", paddingBottom: "6rem" }}>
           <h2 className="font-black" style={{ fontSize: "clamp(2.5rem, 5vw, 4.5rem)", color: "#000", lineHeight: 1.05, marginBottom: "0.6rem" }}>Thank you.</h2>
           <a href="mailto:tamireilon@gmail.com" style={{ fontSize: "1.1rem", color: "#888", textDecoration: "none" }}>tamireilon@gmail.com</a>
         </footer>
@@ -566,7 +591,7 @@ export default function Home() {
       {/* WORK scroll indicator */}
       <AnimatePresence>
         {!isLight && (
-          <motion.div key="work-indicator" className="fixed flex flex-col items-start gap-3" style={{ bottom: "2rem", left: "2rem" }} initial={{ opacity: 1 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+          <motion.div key="work-indicator" className="fixed flex flex-col items-start gap-3" style={{ bottom: "2rem", left: "1.25rem" }} initial={{ opacity: 1 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
             <span className="font-bold tracking-[0.25em] uppercase" style={{ fontSize: "11px", color: "#fff" }}>WORK</span>
             <motion.svg width="14" height="20" viewBox="0 0 14 20" fill="none" animate={{ y: [0, 7, 0] }} transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}>
               <path d="M7 0v16" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
